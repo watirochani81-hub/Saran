@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Pengumpulan Lagu</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2 { text-align: center; }
+        form { margin-bottom: 20px; }
+        input, textarea, button { display: block; width: 100%; margin: 10px 0; padding: 10px; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .warning { color: red; font-weight: bold; text-align: center; }
+        .hidden { display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        #admin-login-btn { width: auto; margin: 20px auto; display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Website Pengumpulan Lagu</h1>
+        
+        <!-- Halaman Utama (Langsung untuk Siswa) -->
+        <div id="main-page">
+            <h2>Kumpulkan Lagu Anda</h2>
+            <div class="warning">Peringatan: Dilarang mengumpulkan lagu berunsur romantis. Jika melanggar, akun akan diblokir.</div>
+            <form id="song-form">
+                <input type="text" id="song-title" placeholder="Judul Lagu" required>
+                <input type="text" id="artist" placeholder="Artis" required>
+                <textarea id="description" placeholder="Deskripsi (opsional)" rows="3"></textarea>
+                <button type="submit">Kirim Lagu</button>
+            </form>
+            <h3>Lagu yang Telah Dikumpulkan:</h3>
+            <table id="songs-table">
+                <thead>
+                    <tr>
+                        <th>Judul</th>
+                        <th>Artis</th>
+                        <th>Deskripsi</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <button id="admin-login-btn">Admin Login</button>
+        </div>
+        
+        <!-- Halaman Login Admin -->
+        <div id="admin-login-page" class="hidden">
+            <h2>Login Admin</h2>
+            <form id="admin-login-form">
+                <input type="text" id="admin-username" placeholder="Username" required>
+                <input type="password" id="admin-password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+            <p>Akun default: Username: admin, Password: admin</p>
+            <button onclick="backToMain()">Kembali</button>
+        </div>
+        
+        <!-- Halaman Admin -->
+        <div id="admin-page" class="hidden">
+            <h2>Panel Admin - Daftar Lagu yang Dikumpulkan</h2>
+            <table id="admin-songs">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Judul Lagu</th>
+                        <th>Artis</th>
+                        <th>Deskripsi</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <button onclick="logoutAdmin()">Logout</button>
+        </div>
+    </div>
+
+    <script>
+        // Data penyimpanan lokal (simulasi database)
+        let songs = JSON.parse(localStorage.getItem('songs')) || [];
+
+        // Fungsi submit lagu (langsung untuk siswa)
+        document.getElementById('song-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const title = document.getElementById('song-title').value;
+            const artist = document.getElementById('artist').value;
+            const desc = document.getElementById('description').value;
+            
+            // Cek unsur romantis (sederhana: jika deskripsi mengandung kata "cinta", "romantis", dll.)
+            const forbiddenWords = ['cinta', 'romantis', 'pacar', 'sayang'];
+            const isRomantic = forbiddenWords.some(word => desc.toLowerCase().includes(word) || title.toLowerCase().includes(word));
+            if (isRomantic) {
+                alert('Lagu ini berunsur romantis! Tidak boleh dikumpulkan.');
+                return;
+            }
+            
+            songs.push({ username: 'siswa', title, artist, description: desc });
+            localStorage.setItem('songs', JSON.stringify(songs));
+            loadSongs();
+            alert('Lagu berhasil dikumpulkan!');
+            document.getElementById('song-form').reset();
+        });
+
+        // Tombol ke login admin
+        document.getElementById('admin-login-btn').addEventListener('click', function() {
+            showPage('admin-login-page');
+        });
+
+        // Fungsi login admin
+        document.getElementById('admin-login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('admin-username').value;
+            const password = document.getElementById('admin-password').value;
+            
+            if (username === 'admin' && password === 'admin') {
+                showPage('admin-page');
+                loadAdminSongs();
+            } else {
+                alert('Username atau password salah!');
+            }
+        });
+
+        // Fungsi tampilkan halaman
+        function showPage(pageId) {
+            document.getElementById('main-page').classList.add('hidden');
+            document.getElementById('admin-login-page').classList.add('hidden');
+            document.getElementById('admin-page').classList.add('hidden');
+            document.getElementById(pageId).classList.remove('hidden');
+        }
+
+        // Load lagu di halaman utama
+        function loadSongs() {
+            const tbody = document.querySelector('#songs-table tbody');
+            tbody.innerHTML = '';
+            songs.forEach(song => {
+                tbody.innerHTML += `<tr><td>${song.title}</td><td>${song.artist}</td><td>${song.description}</td></tr>`;
+            });
+        }
+
+        // Load lagu untuk admin
+        function loadAdminSongs() {
+            const tbody = document.querySelector('#admin-songs tbody');
+            tbody.innerHTML = '';
+            songs.forEach(song => {
+                tbody.innerHTML += `<tr><td>${song.username}</td><td>${song.title}</td><td>${song.artist}</td><td>${song.description}</td></tr>`;
+            });
+        }
+
+        // Kembali ke halaman utama
+        function backToMain() {
+            showPage('main-page');
+        }
+
+        // Logout admin
+        function logoutAdmin() {
+            showPage('main-page');
+        }
+
+        // Load awal
+        loadSongs();
+    </script>
+</body>
+                  </html>
